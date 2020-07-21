@@ -6,6 +6,7 @@ import cv2
 import pickle
 from video.video_sync_reader import VideoSyncReader
 from video.video_canvas import VideoCanvas
+from object_detector import ObjectDetector
 
 
 VOLUME_DIR = '/Data'
@@ -45,6 +46,8 @@ def setting_step(args):
 
     interval = setup_interval(fps)
     zone_info = setup_zone(video, args.skip_zone)
+
+    return interval, zone_info
 
 
 def setup_interval(fps):
@@ -127,10 +130,19 @@ def setup_zone(video, skip_zone):
         elif key == 32:  # 'space' key
             break
 
+    if not canvas.obj_list:
+        print("Not exist zone.")
+        exit(1)
+
     with open(ZONE_FILE, 'w') as f:
         pickle.dump(canvas.obj_list, f)
 
     return make_zone(canvas)
+
+def convert(input_path, threshold, interval, zone_info):
+    detector = ObjectDetector(input_path, interval, threshold, zone_info)
+
+    detector.run()
 
 
 def main():
@@ -140,17 +152,10 @@ def main():
     print(args.input)
     print(args.interval_seconds)
 
-    setting_step(args)
+    interval, zone_info = setting_step(args)
 
-    return
-    # url = 'rtsp://admin:1234@192.168.0.71/stream1'
-    url = args.input
+    convert(args.input, args.threshold, interval, zone_info)
 
-    app = VideoApp()
-    app.addChannel('cam1', url)
-    app.addViewer('ch1')
-    app.setChannelAtViewer('ch1', 'cam1')
-    app.loopForMain()
 
 
 class VideoChannel:

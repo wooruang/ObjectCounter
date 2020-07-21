@@ -1,12 +1,11 @@
-from shapely .
-from tqdm import tqdm
-import cv2
 import sys
 import os
 
 import numpy as np
 import matplotlib.pyplot as plt
 from google.protobuf import text_format
+from tqdm import tqdm
+import cv2
 
 # # Make sure that caffe is on the python path:
 # caffe_root = '/caffe'  # this file is expected to be in {caffe_root}/examples
@@ -272,6 +271,7 @@ class ObjectDetector:
                         color = [int(c * 255) for c in color]
                         self.drawBboxWithText(img, xmin, ymin, xmax, ymax, display_txt, color)
 
+                cv2.imshow("aaa", img)
                 writer.write(img)
         writer.release()
         for k in log_writer:
