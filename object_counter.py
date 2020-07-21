@@ -8,6 +8,9 @@ from video.video_sync_reader import VideoSyncReader
 from video.video_canvas import VideoCanvas
 
 
+VOLUME_DIR = '/Data'
+
+
 def parseArgs():
     parser = argparse.ArgumentParser(description="Object counter.")
     parser.add_argument("input", help="Input video")
@@ -35,7 +38,7 @@ def parseArgs():
 
 def setting_step(args):
     video = VideoSyncReader()
-    video.open(args.input)
+    video.open(os.path.join(VOLUME_DIR, args.input)
 
     fps = video.fps()
     print(fps)
