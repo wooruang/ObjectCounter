@@ -38,7 +38,7 @@ def parseArgs():
 
 def setting_step(args):
     video = VideoSyncReader()
-    video.open(os.path.join(VOLUME_DIR, args.input)
+    video.open(os.path.join(VOLUME_DIR, args.input))
 
     fps = video.fps()
     print(fps)
