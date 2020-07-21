@@ -10,26 +10,23 @@ from video.video_canvas import VideoCanvas
 
 def parseArgs():
     parser = argparse.ArgumentParser(description="Object counter.")
-    parser.add_argument("input", help="입력할 비디오")
+    parser.add_argument("input", help="Input video")
     parser.add_argument(
         "-s", "--interval_seconds",
         type=float,
         help=
-"""딥러닝 처리할 구간.\n
-구간을 작게 설정할수록 변환이 오래 걸리는 대신 좀 더 높은 프레임 수의 결과물이 녹화된다.\n
-반대로 구간을 크게 설정할수록 변환이 줄어드는 대신 좀 더 낮은 프레임 수의 결과물이 녹화된다.
-(가능 초: 1, 0.9, 0.8, 0.7 0.6, 0.5, 0.4, 0.3, 0.2, 0.1)"""
+"""Interval for deeplearning. (1, 0.9, 0.8, 0.7 0.6, 0.5, 0.4, 0.3, 0.2, 0.1)"""
     )
     parser.add_argument(
         "-t", "--threshold",
         type=float,
         default=0.5,
-        help="딥러닝 확률 임계치"
+        help="threshold"
     )
     parser.add_argument(
         "--skip_zone",
         action="store_true",
-        help="이전 영역을 사용."
+        help="Skip previous zone"
     )
 
     args = parser.parse_args()
@@ -48,22 +45,21 @@ def setting_step(args):
 
 
 def setup_interval(fps):
-    print("딥러닝 처리할 구간을 선택하십이오.")
-    print("다음 중에 골라야 합니다.")
+    print("Select interval")
     print("1, 0.9, 0.8, 0.7 0.6, 0.5, 0.4, 0.3, 0.2, 0.1")
     try:
         interval =  float(input("> "))
     except Exception as e:
         print(e)
-        print("숫자를 입력해야합니다.")
+        print("Please input a number.")
         exit(1)
 
     if interval not in [ i / 10 for i in range(1, 10)]:
-        print("다음 중에 골라야 합니다.")
+        print("Select below.")
         print("1, 0.9, 0.8, 0.7 0.6, 0.5, 0.4, 0.3, 0.2, 0.1")
         exit(1)
     elif fps < 10 and interval <= 0.1:
-        print(f"영상의 프레임 수 대비 너무 작은 구간을 선택하셨습니다. (영상 프레임 {fps})")
+        print(f"Too small value (video fps is {fps})")
         exit(1)
     
     return interval
@@ -91,7 +87,7 @@ def setup_zone(video, skip_zone):
 
             return make_zone(canvas)
         else:
-            print("이전 영역이 존재하지 않습니다.")
+            print("Not exist zone.")
             exit(1)
 
     cv2.namedWindow(WIN_NAME)
@@ -120,7 +116,7 @@ def setup_zone(video, skip_zone):
         canvas.keyDrawingForCv(key)
 
         if key == 27:  # 'ESC' key.
-            print("프로그램을 종료합니다.")
+            print("Exit program.")
             exit(1)
             break
         elif key == 255: # Del key.
