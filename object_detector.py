@@ -195,6 +195,15 @@ class ObjectDetector:
                 for k in self.zone_info:
                     poly = Polygon(self.zone_info[k])
 
+                    cv2.polylines(img, [self.zone_info[k]], True, (255, 0, 0), 2)
+                    poly_bound = poly.bounds
+
+                    # cv2.rectangle(img, (int(poly_bound[0]), int(poly_bound[1])), (int(poly_bound[2]), int(poly_bound[3])), (0,255,0), 2)
+
+                    self.drawTextAtBottomRight(img, int(poly_bound[0]), int(poly_bound[1]), k, (255, 0, 0), font_scale=1, thickness=3)
+
+
+
                     exist_objs = []
 
                     def filtering(idx):
@@ -272,8 +281,11 @@ class ObjectDetector:
                         color = [int(c * 255) for c in color]
                         self.drawBboxWithText(img, xmin, ymin, xmax, ymax, display_txt, color)
 
-                # cv2.imshow("Test", img)
-                # cv2.waitKey(0)
+                cv2.imshow("Test", img)
+                key = cv2.waitKey(0)
+                
+                if key == ord('a'):
+                    exit(1)
                 writer.write(img)
         writer.release()
         for k in log_writer:
@@ -330,3 +342,17 @@ class ObjectDetector:
 
         cv2.putText(img, display_txt, (xmin + 10, ymin - 10),
                     font, font_scale, t_color, thickness)
+
+    @staticmethod
+    def drawTextAtBottomRight(img, x, y, txt, color, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=0.55, thickness=2):
+        size = cv2.getTextSize(txt, font, font_scale, thickness)
+        t_w = size[0][0]
+        t_h = size[0][1]
+        x_margin = 20
+        y_margin = 10
+
+        cv2.putText(img, txt, (x + x_margin, y + t_h + y_margin),
+                    font, font_scale, color, thickness)
+
+
+

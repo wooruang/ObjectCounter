@@ -87,7 +87,7 @@ def setup_zone(video, skip_zone):
     def make_zone(canv):
         zone_info = {}
         for i, obj in enumerate(canv.obj_list):
-            name = 'zone{}'.format(i)
+            name = 'zone{}'.format(i+1)
             points = np.array(obj.getPoints()).reshape(-1, 2)
             zone_info[name] = points
         return zone_info
