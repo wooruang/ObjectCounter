@@ -143,12 +143,13 @@ class ObjectDetector:
         total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
         fps = cap.get(cv2.CAP_PROP_FPS)
         # interval = fps / 10
+        interval_frame = fps * self.interval
 
         # print(w, h, total_frames, fps, interval)
 
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         writer = cv2.VideoWriter(
-            self.output_video_path, fourcc, fps / self.interval, (int(w), int(h)))
+            self.output_video_path, fourcc, 1 / self.interval, (int(w), int(h)))
 
         log_writer = {}
         for k in self.zone_path:
@@ -184,7 +185,7 @@ class ObjectDetector:
             if not ret:
                 break
 
-            if a % self.interval == 0:
+            if a % interval_frame == 0:
                 overlay = img.copy()
 
                 det_label, det_conf, det_xmin, det_ymin, det_xmax, det_ymax = self.detectAndParse(
@@ -201,8 +202,6 @@ class ObjectDetector:
                     # cv2.rectangle(img, (int(poly_bound[0]), int(poly_bound[1])), (int(poly_bound[2]), int(poly_bound[3])), (0,255,0), 2)
 
                     self.drawTextAtBottomRight(img, int(poly_bound[0]), int(poly_bound[1]), k, (255, 0, 0), font_scale=1, thickness=3)
-
-
 
                     exist_objs = []
 
