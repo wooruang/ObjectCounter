@@ -1,3 +1,8 @@
+#-*- coding: utf-8 -*-
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
 import os
 import time
 import numpy as np
@@ -25,7 +30,7 @@ def parseArgs():
         "-t", "--threshold",
         type=float,
         default=0.5,
-        help="threshold"
+        help="딥러닝 확률 임계치"
     )
     parser.add_argument(
         "--skip_zone",
