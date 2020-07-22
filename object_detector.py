@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from google.protobuf import text_format
 from tqdm import tqdm
 import cv2
+from shapely.geometry import Polygon, Point
 
 # # Make sure that caffe is on the python path:
 # caffe_root = '/caffe'  # this file is expected to be in {caffe_root}/examples
@@ -36,7 +37,6 @@ class ObjectDetector:
         self.initCaffeNet()
         self.initSelectedLabelIndexes()
         self.initColor()
-        self.initForCsv()
 
     def initVariables(self, input_path, interval, threshold, zone_info, config, weights, labelmap):
         self.config_root = "/Data"
@@ -120,7 +120,7 @@ class ObjectDetector:
         line += '\n'
         return line
 
-    def detectAndParse(self):
+    def detectAndParse(self, img):
         transformed_image = self.transformer.preprocess('data', img)
         self.net.blobs['data'].data[...] = transformed_image
         # Forward pass.
@@ -136,7 +136,7 @@ class ObjectDetector:
         return det_label, det_conf, det_xmin, det_ymin, det_xmax, det_ymax
 
     def run(self):
-        cap = cv2.VideoCapture(self.video_path)
+        cap = cv2.VideoCapture(self.input_path)
 
         w = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
         h = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
@@ -184,7 +184,7 @@ class ObjectDetector:
             if not ret:
                 break
 
-            if a % interval == 0:
+            if a % self.interval == 0:
                 overlay = img.copy()
 
                 det_label, det_conf, det_xmin, det_ymin, det_xmax, det_ymax = self.detectAndParse(
@@ -193,7 +193,7 @@ class ObjectDetector:
                 # print(det_label)
 
                 for k in self.zone_info:
-                    poly = self.zone_info[k]
+                    poly = Polygon(self.zone_info[k])
 
                     exist_objs = []
 
@@ -226,14 +226,14 @@ class ObjectDetector:
                     top_conf = det_conf[top_indices]
                     top_label_indices = det_label[top_indices].tolist()
                     top_labels = self.get_labelname(
-                        labelmap, top_label_indices)
+                        self.labelmap, top_label_indices)
                     top_xmin = det_xmin[top_indices]
                     top_ymin = det_ymin[top_indices]
                     top_xmax = det_xmax[top_indices]
                     top_ymax = det_ymax[top_indices]
 
                     count_labels = [top_label_indices.count(
-                        idx) for idx in avaliable_label_indexes]
+                        idx) for idx in self.avaliable_label_indexes]
                     
                     log_line = str(a / fps) if a != 0 else str(a)
                     for c in count_labels:
@@ -244,13 +244,13 @@ class ObjectDetector:
 
                     for i in range(top_conf.shape[0]):
                         xmin, ymin, xmax, ymax = self.filterBbox(
-                            top_xmin[idx], top_ymin[idx], top_xmax[idx], top_ymax[idx], w, h)
+                            top_xmin[i], top_ymin[i], top_xmax[i], top_ymax[i], w, h)
 
                         score = top_conf[i]
                         label = int(top_label_indices[i])
                         label_name = top_labels[i]
                         display_txt = '%s: %.2f' % (label_name, score)
-                        color = colors[label][:-1]
+                        color = self.colors[label][:-1]
                         color = [int(c * 255) for c in color]
 
                         self.drawBboxWithoutText(
@@ -262,17 +262,18 @@ class ObjectDetector:
 
                     for i in range(top_conf.shape[0]):
                         xmin, ymin, xmax, ymax = self.filterBbox(
-                            top_xmin[idx], top_ymin[idx], top_xmax[idx], top_ymax[idx], w, h)
+                            top_xmin[i], top_ymin[i], top_xmax[i], top_ymax[i], w, h)
 
                         score = top_conf[i]
                         label = int(top_label_indices[i])
                         label_name = top_labels[i]
                         display_txt = '%s: %.2f' % (label_name, score)
-                        color = colors[label][:-1]
+                        color = self.colors[label][:-1]
                         color = [int(c * 255) for c in color]
                         self.drawBboxWithText(img, xmin, ymin, xmax, ymax, display_txt, color)
 
-                cv2.imshow("aaa", img)
+                # cv2.imshow("Test", img)
+                # cv2.waitKey(0)
                 writer.write(img)
         writer.release()
         for k in log_writer:
@@ -322,6 +323,7 @@ class ObjectDetector:
         size = cv2.getTextSize(display_txt, font, font_scale, thickness)
         t_w = size[0][0]
         t_h = size[0][1]
+        t_color = (0,0,0)
 
         cv2.rectangle(img, (xmin, ymin - t_h - 20),
                       (xmin + t_w + 20, ymin), t_color, 1)
