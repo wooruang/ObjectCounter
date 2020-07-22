@@ -53,7 +53,7 @@ class ObjectDetector:
         self.zone_lines = {}
 
         for k in self.zone_info:
-            out_name = f'{}_{}{}'.format(input_name, k, self.OUTPUT_FILE_FORMAT)
+            out_name = '{}_{}{}'.format(input_name, k, self.OUTPUT_FILE_FORMAT)
             out_path = os.path.join(self.output_dir, out_name)
             self.zone_path[k] = out_path
             self.zone_lines = []
