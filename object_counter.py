@@ -35,7 +35,18 @@ def parseArgs():
     parser.add_argument(
         "--skip_zone",
         action="store_true",
-        help="Skip previous zone"
+        help="영역 설정 건너뛰기"
+    )
+    parser.add_argument(
+        "--fps",
+        type=float,
+        default=30,
+        help="영상 프레임 수"
+    )
+    parser.add_argument(
+        "--use_video_fps",
+        action="store_true",
+        help="영상의 프레임 수를 사용"
     )
 
     args = parser.parse_args()
@@ -46,14 +57,17 @@ def setting_step(args):
     video = VideoSyncReader()
     video.open(os.path.join(VOLUME_DIR, args.input))
 
-    fps = video.fps()
+    if args.use_video_fps:
+        fps = video.fps()
+    else:
+        fps = args.fps
     print(fps)
 
     interval = setup_interval(fps, args.interval_seconds)
 
     zone_info = setup_zone(video, args.skip_zone)
 
-    return interval, zone_info
+    return interval, zone_info, fps
 
 
 def setup_interval(fps, interval_seconds):
@@ -158,8 +172,8 @@ def setup_zone(video, skip_zone):
 
     return make_zone(canvas)
 
-def convert(input_path, threshold, interval, zone_info):
-    detector = ObjectDetector(input_path, interval, threshold, zone_info)
+def convert(input_path, threshold, interval, fps, zone_info):
+    detector = ObjectDetector(input_path, interval, threshold, fps, zone_info)
 
     detector.run()
 
@@ -171,9 +185,9 @@ def main():
     print(args.input)
     print(args.interval_seconds)
 
-    interval, zone_info = setting_step(args)
+    interval, zone_info, fps = setting_step(args)
 
-    convert(args.input, args.threshold, interval, zone_info)
+    convert(args.input, args.threshold, interval, fps, zone_info)
 
 
 

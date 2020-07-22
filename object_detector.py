@@ -22,15 +22,15 @@ caffe.set_mode_gpu()
 class ObjectDetector:
     OUTPUT_FILE_FORMAT = '.csv'
 
-    def __init__(self, input_path, interval, threshold, zone_info,
+    def __init__(self, input_path, interval, threshold, fps, zone_info,
                  config='deploy.prototxt',
                  weights='VGG_car5_20190924T065602_SSD_512x512_iter_90000.caffemodel',
                  labelmap='labelmap_car5.prototxt'):
-        self.initialize(input_path, interval, threshold,
+        self.initialize(input_path, interval, threshold, fps,
                         zone_info, config, weights, labelmap)
 
-    def initialize(self, input_path, interval, threshold, zone_info, config, weights, labelmap):
-        self.initVariables(input_path, interval, threshold,
+    def initialize(self, input_path, interval, threshold, fps, zone_info, config, weights, labelmap):
+        self.initVariables(input_path, interval, threshold, fps,
                            zone_info, config, weights, labelmap)
         self.initPlt()
         self.initLabelMap()
@@ -38,7 +38,7 @@ class ObjectDetector:
         self.initSelectedLabelIndexes()
         self.initColor()
 
-    def initVariables(self, input_path, interval, threshold, zone_info, config, weights, labelmap):
+    def initVariables(self, input_path, interval, threshold, fps, zone_info, config, weights, labelmap):
         self.config_root = "/Data"
         self.input_path = os.path.join(self.config_root, input_path)
         input_name = os.path.basename(input_path).split('.')[0]
@@ -65,6 +65,7 @@ class ObjectDetector:
         self.threshold = threshold
         self.interval = interval
         self.image_resize = 512
+        self.video_fps = fps
         print("Config root        : {}".format(self.config_root))
         print("Input File         : {}".format(self.input_path))
         print("Labelmap File      : {}".format(self.labelmap_file))
@@ -75,6 +76,7 @@ class ObjectDetector:
         print("Detect threshold   : {}".format(self.threshold))
         print("Detect Interval    : {}".format(self.interval))
         print("Image resize       : {}".format(self.image_resize))
+        print("Video FPS          : {}".format(self.video_fps))
 
     def initPlt(self):
         plt.rcParams['figure.figsize'] = (10, 10)
@@ -136,16 +138,20 @@ class ObjectDetector:
         return det_label, det_conf, det_xmin, det_ymin, det_xmax, det_ymax
 
     def run(self):
+        ERROR_COUNT = 10
+        error_c = 0
+
         cap = cv2.VideoCapture(self.input_path)
 
         w = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
         h = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
         total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-        fps = cap.get(cv2.CAP_PROP_FPS)
+        # fps = cap.get(cv2.CAP_PROP_FPS)
+        fps = self.video_fps
         # interval = fps / 10
         interval_frame = fps * self.interval
 
-        # print(w, h, total_frames, fps, interval)
+        # print(w, h, total_frames, fps, self.interval, interval_frame)
 
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         writer = cv2.VideoWriter(
@@ -178,32 +184,26 @@ class ObjectDetector:
 
             return False
 
-        for a in tqdm(range(0, int(total_frames)), desc='inferencing'):
+        for a in tqdm(range(int(total_frames)), desc='inferencing'):
             # while cap.isOpened():
             ret, img = cap.read()
 
-            if not ret:
-                break
+            
+            # print("aaaa {}".format(a))
+            if not ret: 
+                # print("error {}".format(a))
+                if error_c > ERROR_COUNT:
+                    break
+                error_c += 1
 
             if a % interval_frame == 0:
+                # print("ddddd {}".format(a))
                 overlay = img.copy()
 
                 det_label, det_conf, det_xmin, det_ymin, det_xmax, det_ymax = self.detectAndParse(
                     img)
-
-                # print(det_label)
-                
-                # Draw zone.
-                for k in self.zone_info:
-                    poly = Polygon(self.zone_info[k])
-
-                    cv2.polylines(img, [self.zone_info[k]], True, (255, 0, 0), 2)
-                    poly_bound = poly.bounds
-
-                    # cv2.rectangle(img, (int(poly_bound[0]), int(poly_bound[1])), (int(poly_bound[2]), int(poly_bound[3])), (0,255,0), 2)
-
-                    self.drawTextAtBottomRight(img, int(poly_bound[0]), int(poly_bound[1]), k, (255, 0, 0), font_scale=1, thickness=3)
-
+ 
+                # Write Log and Darw object's background.
                 for k in self.zone_info:
                     poly = Polygon(self.zone_info[k])
 
@@ -254,6 +254,7 @@ class ObjectDetector:
                     # print(log_line)
                     log_writer[k].write(log_line)
 
+                    # Draw object's background.
                     for i in range(top_conf.shape[0]):
                         xmin, ymin, xmax, ymax = self.filterBbox(
                             top_xmin[i], top_ymin[i], top_xmax[i], top_ymax[i], w, h)
@@ -268,10 +269,65 @@ class ObjectDetector:
                         self.drawBboxWithoutText(
                             img, xmin, ymin, xmax, ymax, display_txt, color)
 
-                    alpha = 0.5
+                alpha = 0.5
 
-                    img = cv2.addWeighted(overlay, alpha, img, 1-alpha, 0)
+                img = cv2.addWeighted(overlay, alpha, img, 1-alpha, 0)
+                
+                # Draw zone.
+                for k in self.zone_info:
+                    poly = Polygon(self.zone_info[k])
 
+                    cv2.polylines(img, [self.zone_info[k]], True, (255, 0, 0), 2)
+                    poly_bound = poly.bounds
+
+                    # cv2.rectangle(img, (int(poly_bound[0]), int(poly_bound[1])), (int(poly_bound[2]), int(poly_bound[3])), (0,255,0), 2)
+
+                    self.drawTextAtBottomRight(img, int(poly_bound[0]), int(poly_bound[1]), k, (255, 0, 0), font_scale=1, thickness=3)
+                 
+                # Draw objects.
+                for k in self.zone_info:
+                    poly = Polygon(self.zone_info[k])
+
+                    exist_objs = []
+
+                    def filtering(idx):
+                        xmin, ymin, xmax, ymax = self.filterBbox(
+                            det_xmin[idx], det_ymin[idx], det_xmax[idx], det_ymax[idx], w, h)
+
+                        if isWrong(w, h, xmin, ymin, xmax, ymax):
+                            return False
+                        temp_bbox = [xmin, ymin, xmax, ymax]
+                        if temp_bbox in exist_objs:
+                            return False
+                        exist_objs.append([xmin, ymin, xmax, ymax])
+                        return True
+
+                    def intersect(idx):
+                        xmin, ymin, xmax, ymax = self.filterBbox(
+                            det_xmin[idx], det_ymin[idx], det_xmax[idx], det_ymax[idx], w, h)
+
+                        point = Point(self.getCenterPoint([xmin, ymin, xmax, ymax]))
+                        return poly.contains(point)
+
+                    # Get detections with confidence higher than threshold.
+                    top_indices = [i for i, conf in enumerate(
+                        det_conf) if conf >= self.threshold and filtering(i) and intersect(i)]
+
+                    # print('======')
+                    # print(top_indices)
+
+                    top_conf = det_conf[top_indices]
+                    top_label_indices = det_label[top_indices].tolist()
+                    top_labels = self.get_labelname(
+                        self.labelmap, top_label_indices)
+                    top_xmin = det_xmin[top_indices]
+                    top_ymin = det_ymin[top_indices]
+                    top_xmax = det_xmax[top_indices]
+                    top_ymax = det_ymax[top_indices]
+
+                    count_labels = [top_label_indices.count(
+                        idx) for idx in self.avaliable_label_indexes]
+                    
                     for i in range(top_conf.shape[0]):
                         xmin, ymin, xmax, ymax = self.filterBbox(
                             top_xmin[i], top_ymin[i], top_xmax[i], top_ymax[i], w, h)
