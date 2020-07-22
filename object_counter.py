@@ -49,13 +49,14 @@ def setting_step(args):
     fps = video.fps()
     print(fps)
 
-    interval = setup_interval(fps)
+    interval = setup_interval(fps, args.interval_seconds)
+
     zone_info = setup_zone(video, args.skip_zone)
 
     return interval, zone_info
 
 
-def setup_interval(fps):
+def setup_interval(fps, interval_seconds):
     interval_range = [ float(i+1) / 10.0 for i in list(range(10))]
     interval_range.reverse()
 
@@ -63,7 +64,10 @@ def setup_interval(fps):
     print("다음 중에 골라야 합니다.")
     print("{}".format(interval_range))
     try:
-        interval =  float(input("> "))
+        if interval_seconds is not None:
+            interval = float(interval_seconds)
+        else:
+            interval =  float(input("> "))
     except Exception as e:
         print(e)
         print("숫자를 입력 하십시오. (입력값 : {})".format(interval))
