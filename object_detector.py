@@ -43,7 +43,8 @@ class ObjectDetector:
         self.input_path = os.path.join(self.config_root, input_path)
         input_name = os.path.basename(input_path).split('.')[0]
         input_result_name = '{}_result'.format(input_name)
-        self.output_dir = os.path.join(self.config_root, input_result_name)
+        output_dir_name = '{}_{}_{}'.format(input_result_name, interval, threshold)
+        self.output_dir = os.path.join(self.config_root, output_dir_name)
         self.output_video_path = os.path.join(
             self.output_dir, '{}.avi'.format(input_result_name))
         # Make output dir.
