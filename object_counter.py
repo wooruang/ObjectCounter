@@ -56,21 +56,22 @@ def setting_step(args):
 
 
 def setup_interval(fps):
-    print("Select interval")
+    print("딥러닝 처리할 구간을 선택하십시오.")
+    print("다음 중에 골라야 합니다.")
     print("1, 0.9, 0.8, 0.7 0.6, 0.5, 0.4, 0.3, 0.2, 0.1")
     try:
         interval =  float(input("> "))
     except Exception as e:
         print(e)
-        print("Please input a number.")
+        print("숫자를 입력 하십시오. (입력값 : {})".format(interval))
         exit(1)
 
     if interval not in [ i / 10 for i in range(1, 10)]:
-        print("Select below.")
+        print("다음 중에 골라야 합니다. (입력값 : {})".format(interval))
         print("1, 0.9, 0.8, 0.7 0.6, 0.5, 0.4, 0.3, 0.2, 0.1")
         exit(1)
     elif fps < 10 and interval <= 0.1:
-        print("Too small value (video fps is {})".format(fps))
+        print("영상의 프레임 수 대비 너무 작은 구간을 선택하셨습니다. (영상 프레임 {})".format(fps))
         exit(1)
 
     return interval
@@ -98,7 +99,7 @@ def setup_zone(video, skip_zone):
 
             return make_zone(canvas)
         else:
-            print("Not exist zone.")
+            print("이전 영역이 존재하지 않습니다.")
             exit(1)
 
     cv2.namedWindow(WIN_NAME)
@@ -127,7 +128,7 @@ def setup_zone(video, skip_zone):
         canvas.keyDrawingForCv(key)
 
         if key == 27:  # 'ESC' key.
-            print("Exit program.")
+            print("프로그램을 종료합니다.")
             exit(1)
             break
         elif key == 255: # Del key.
@@ -136,7 +137,7 @@ def setup_zone(video, skip_zone):
             break
 
     if not canvas.obj_list:
-        print("Not exist zone.")
+        print("이전 영역이 존재하지 않습니다.")
         exit(1)
 
     with open(ZONE_FILE, 'w') as f:
