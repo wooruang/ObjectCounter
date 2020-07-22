@@ -65,9 +65,9 @@ def setup_interval(fps):
         print("1, 0.9, 0.8, 0.7 0.6, 0.5, 0.4, 0.3, 0.2, 0.1")
         exit(1)
     elif fps < 10 and interval <= 0.1:
-        print(f"Too small value (video fps is {fps})")
+        print("Too small value (video fps is {})".format(fps))
         exit(1)
-    
+
     return interval
 
 def setup_zone(video, skip_zone):
@@ -78,7 +78,7 @@ def setup_zone(video, skip_zone):
     def make_zone(canv):
         zone_info = {}
         for i, obj in enumerate(canv.obj_list):
-            name = f'zone{i}'
+            name = 'zone{}'.format(i)
             points = np.array(obj.getPoints()).reshape(-1, 2)
             zone_info[name] = points
         return zone_info

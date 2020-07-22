@@ -41,10 +41,10 @@ class ObjectDetector:
         self.config_root = "/Data"
         self.input_path = os.path.join(self.config_root, input_path)
         input_name = os.path.basename(input_path).split('.')[0]
-        input_result_name = f'{input_name}_result'
+        input_result_name = '{}_result'.format(input_name)
         self.output_dir = os.path.join(self.config_root, input_result_name)
         self.output_video_path = os.path.join(
-            self.output_dir, f'{input_result_name}.avi')
+            self.output_dir, '{}.avi'.format(input_result_name))
         # Make output dir.
         os.mkdir(self.output_dir)
 
@@ -53,7 +53,7 @@ class ObjectDetector:
         self.zone_lines = {}
 
         for k in self.zone_info:
-            out_name = f'{input_name}_{k}{self.OUTPUT_FILE_FORMAT}'
+            out_name = f'{}_{}{}'.format(input_name, k, self.OUTPUT_FILE_FORMAT)
             out_path = os.path.join(self.output_dir, out_name)
             self.zone_path[k] = out_path
             self.zone_lines = []
@@ -64,16 +64,16 @@ class ObjectDetector:
         self.threshold = threshold
         self.interval = interval
         self.image_resize = 512
-        print(f"Config root        : {self.config_root}")
-        print(f"Input File         : {self.input_path}")
-        print(f"Labelmap File      : {self.labelmap_file}")
-        print(f"Model config File  : {self.model_config}")
-        print(f"Model weights File : {self.model_weights}")
-        print(f"Detect Zone info   : {self.zone_info}")
-        print(f"Detect Zone path   : {self.zone_path}")
-        print(f"Detect threshold   : {self.threshold}")
-        print(f"Detect Interval    : {self.interval}")
-        print(f"Image resize       : {self.image_resize}")
+        print("Config root        : {}".format(self.config_root))
+        print("Input File         : {}".format(self.input_path))
+        print("Labelmap File      : {}".format(self.labelmap_file))
+        print("Model config File  : {}".format(self.model_config))
+        print("Model weights File : {}".format(self.model_weights))
+        print("Detect Zone info   : {}".format(self.zone_info))
+        print("Detect Zone path   : {}".format(self.zone_path))
+        print("Detect threshold   : {}".format(self.threshold))
+        print("Detect Interval    : {}".format(self.interval))
+        print("Image resize       : {}".format(self.image_resize))
 
     def initPlt(self):
         plt.rcParams['figure.figsize'] = (10, 10)
