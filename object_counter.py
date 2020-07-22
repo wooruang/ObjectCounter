@@ -105,6 +105,10 @@ def setup_zone(video, skip_zone):
             print("이전 영역이 존재하지 않습니다.")
             exit(1)
 
+    if os.path.exists(ZONE_FILE):
+        with open(ZONE_FILE, 'r') as f:
+            canvas.obj_list = pickle.load(f)
+
     cv2.namedWindow(WIN_NAME)
     cv2.setMouseCallback(WIN_NAME, canvas.mouseDrawingForCv)
 
@@ -145,6 +149,8 @@ def setup_zone(video, skip_zone):
 
     with open(ZONE_FILE, 'w') as f:
         pickle.dump(canvas.obj_list, f)
+
+    cv2.destroyWindow(WIN_NAME)
 
     return make_zone(canvas)
 

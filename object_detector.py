@@ -192,7 +192,8 @@ class ObjectDetector:
                     img)
 
                 # print(det_label)
-
+                
+                # Draw zone.
                 for k in self.zone_info:
                     poly = Polygon(self.zone_info[k])
 
@@ -202,6 +203,9 @@ class ObjectDetector:
                     # cv2.rectangle(img, (int(poly_bound[0]), int(poly_bound[1])), (int(poly_bound[2]), int(poly_bound[3])), (0,255,0), 2)
 
                     self.drawTextAtBottomRight(img, int(poly_bound[0]), int(poly_bound[1]), k, (255, 0, 0), font_scale=1, thickness=3)
+
+                for k in self.zone_info:
+                    poly = Polygon(self.zone_info[k])
 
                     exist_objs = []
 
@@ -280,11 +284,10 @@ class ObjectDetector:
                         color = [int(c * 255) for c in color]
                         self.drawBboxWithText(img, xmin, ymin, xmax, ymax, display_txt, color)
 
-                cv2.imshow("Test", img)
-                key = cv2.waitKey(0)
-                
-                if key == ord('a'):
-                    exit(1)
+                # cv2.imshow("Test", img)
+                # key = cv2.waitKey(0) 
+                # if key == ord('a'):
+                #     exit(1)
                 writer.write(img)
         writer.release()
         for k in log_writer:
