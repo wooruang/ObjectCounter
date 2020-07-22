@@ -56,9 +56,12 @@ def setting_step(args):
 
 
 def setup_interval(fps):
+    interval_range = [ float(i+1) / 10.0 for i in list(range(10))]
+    interval_range.reverse()
+
     print("딥러닝 처리할 구간을 선택하십시오.")
     print("다음 중에 골라야 합니다.")
-    print("1, 0.9, 0.8, 0.7 0.6, 0.5, 0.4, 0.3, 0.2, 0.1")
+    print("{}".format(interval_range))
     try:
         interval =  float(input("> "))
     except Exception as e:
@@ -66,9 +69,9 @@ def setup_interval(fps):
         print("숫자를 입력 하십시오. (입력값 : {})".format(interval))
         exit(1)
 
-    if interval not in [ i / 10 for i in range(1, 10)]:
+    if interval not in interval_range:
         print("다음 중에 골라야 합니다. (입력값 : {})".format(interval))
-        print("1, 0.9, 0.8, 0.7 0.6, 0.5, 0.4, 0.3, 0.2, 0.1")
+        print("{}".format(interval_range))
         exit(1)
     elif fps < 10 and interval <= 0.1:
         print("영상의 프레임 수 대비 너무 작은 구간을 선택하셨습니다. (영상 프레임 {})".format(fps))
