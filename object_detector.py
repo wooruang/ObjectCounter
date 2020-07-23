@@ -196,6 +196,7 @@ class ObjectDetector:
                 if error_c > ERROR_COUNT:
                     break
                 error_c += 1
+                continue
 
             if a % interval_frame == 0:
                 # print("ddddd {}".format(a))
