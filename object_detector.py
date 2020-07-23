@@ -139,7 +139,7 @@ class ObjectDetector:
         return det_label, det_conf, det_xmin, det_ymin, det_xmax, det_ymax
 
     def run(self):
-        ERROR_COUNT = 10
+        ERROR_COUNT = 15
         error_c = 0
 
         cap = cv2.VideoCapture(self.input_path)
@@ -191,7 +191,7 @@ class ObjectDetector:
 
             
             # print("aaaa {}".format(a))
-            if not ret: 
+            if not ret or img is None: 
                 # print("error {}".format(a))
                 if error_c > ERROR_COUNT:
                     break
@@ -248,7 +248,7 @@ class ObjectDetector:
                     count_labels = [top_label_indices.count(
                         idx) for idx in self.avaliable_label_indexes]
                     
-                    log_line = str(a / fps) if a != 0 else str(a)
+                    log_line = str(float(a) / float(fps)) if a != 0 else str(float(a))
                     for c in count_labels:
                         log_line += ',{}'.format(c)
                     log_line += '\n'
