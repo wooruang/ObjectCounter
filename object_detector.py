@@ -36,6 +36,7 @@ class ObjectDetector:
         self.initLabelMap()
         self.initCaffeNet()
         self.initSelectedLabelIndexes()
+        self.initSelectedLabelGroups()
         self.initColor()
 
     def initVariables(self, input_path, interval, threshold, fps, zone_info, config, weights, labelmap):
