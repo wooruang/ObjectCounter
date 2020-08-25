@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import sys
 import os
 
@@ -43,7 +43,8 @@ class ObjectDetector:
         self.input_path = os.path.join(self.config_root, input_path)
         input_name = os.path.basename(input_path).split('.')[0]
         input_result_name = '{}_result'.format(input_name)
-        output_dir_name = '{}_{}_{}'.format(input_result_name, interval, threshold)
+        output_dir_name = '{}_{}_{}'.format(
+            input_result_name, interval, threshold)
         self.output_dir = os.path.join(self.config_root, output_dir_name)
         self.output_video_path = os.path.join(
             self.output_dir, '{}.avi'.format(input_result_name))
@@ -54,10 +55,10 @@ class ObjectDetector:
         self.zone_path = {}
         self.zone_lines = {}
 
-        for k in self.zone_info:
-            out_name = '{}_{}{}'.format(input_name, k, self.OUTPUT_FILE_FORMAT)
+        for zone_name in self.zone_info:
+            out_name = '{}_{}{}'.format(input_name, zone_name, self.OUTPUT_FILE_FORMAT)
             out_path = os.path.join(self.output_dir, out_name)
-            self.zone_path[k] = out_path
+            self.zone_path[zone_name] = out_path
             self.zone_lines = []
 
         self.labelmap_file = os.path.join(self.config_root, labelmap)
@@ -113,7 +114,7 @@ class ObjectDetector:
             8, 3, self.image_resize, self.image_resize)
 
     def initSelectedLabelIndexes(self):
-        self.avaliable_label_indexes = [1, 3, 4, 6, 7, 9, 10, 11]
+        self.avaliable_label_indexes = [4, 3, 11, 9, 10, 7, 1]
 
     def initColor(self):
         self.colors = plt.cm.hsv(np.linspace(0, 1, 21)).tolist()
@@ -140,218 +141,193 @@ class ObjectDetector:
         det_ymax = detections[0, 0, :, 6]
         return det_label, det_conf, det_xmin, det_ymin, det_xmax, det_ymax
 
+    def initInVideo():
+        cap = cv2.VideoCapture(self.input_path)
+        w = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+        h = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        return cap, w, h, total_frames
+
+    def initOutVideo(w, h):
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        writer = cv2.VideoWriter(
+            self.output_video_path, fourcc, 1 / self.interval, (int(w), int(h)))
+        return writer
+
+    def initFileLogger():
+        log_writer = {}
+        for zone_name in self.zone_path:
+            log_writer[zone_name] = open(self.zone_path[zone_name], 'w')
+            log_writer[zone_name].write(self.getFirstLine())
+        return log_writer
+
     def run(self):
         ERROR_COUNT = 15
         error_c = 0
 
-        cap = cv2.VideoCapture(self.input_path)
+        # Init Videos.
+        cap, w, h, total_frames = initInVideo()
+        writer = initOutVideo()
 
-        w = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-        h = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-        total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-        # fps = cap.get(cv2.CAP_PROP_FPS)
-        fps = self.video_fps
-        # interval = fps / 10
-        # interval_frame = fps * self.interval
+        # Init Logger.
+        log_writer = initFileLogger(w, h)
 
-        # print(w, h, total_frames, fps, self.interval, interval_frame)
-
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        writer = cv2.VideoWriter(
-            self.output_video_path, fourcc, 1 / self.interval, (int(w), int(h)))
-
-        log_writer = {}
-        for k in self.zone_path:
-            log_writer[k] = open(self.zone_path[k], 'w')
-            log_writer[k].write(self.getFirstLine())
-
-        def isWrong(ww, hh, xxmin, yymin, xxmax, yymax):
-            if xxmin > ww or yymin > hh or xxmax < 0 or yymax < 0:
-                return True
-            CONF_W = 0.6
-            CONF_H = 0.6
-
-            limit_w = int(ww * CONF_W)
-            limit_h = int(hh * CONF_H)
-
-            o_w = xxmax - xxmin
-            o_h = yymax - yymin
-
-            if o_w > limit_w or o_h > limit_h:
-                return True
-
-            if o_w <= 20:
-                return True
-            if o_h <= 20:
-                return True
-
-            return False
-
-        for a in tqdm(range(int(total_frames)), desc='inferencing'):
-            # while cap.isOpened():
+        for cur_num_frame in tqdm(range(int(total_frames)), desc='inferencing'):
             ret, img = cap.read()
 
-            
-            # print("aaaa {}".format(a))
-            if not ret or img is None: 
-                # print("error {}".format(a))
+            # Check Error.
+            if not ret or img is None:
                 if error_c > ERROR_COUNT:
                     break
                 error_c += 1
                 continue
 
-            if a % self.interval_frame == 0:
-                # print("ddddd {}".format(a))
-                overlay = img.copy()
+            # Only at Interval frame.
+            if cur_num_frame % self.interval_frame != 0:
+                continue
 
-                det_label, det_conf, det_xmin, det_ymin, det_xmax, det_ymax = self.detectAndParse(
-                    img)
- 
-                # Write Log and Darw object's background.
-                for k in self.zone_info:
-                    poly = Polygon(self.zone_info[k])
+            # For Draw image.
+            overlay = img.copy()
 
-                    exist_objs = []
+            # Detect and Parse.
+            det_label, det_conf, det_xmin, det_ymin, det_xmax, det_ymax = self.detectAndParse(
+                img)
 
-                    def filtering(idx):
-                        xmin, ymin, xmax, ymax = self.filterBbox(
-                            det_xmin[idx], det_ymin[idx], det_xmax[idx], det_ymax[idx], w, h)
+            # Write Log and Darw object's background.
+            for zone_name in self.zone_info:
+                poly = Polygon(self.zone_info[zone_name])
 
-                        if isWrong(w, h, xmin, ymin, xmax, ymax):
-                            return False
-                        temp_bbox = [xmin, ymin, xmax, ymax]
-                        if temp_bbox in exist_objs:
-                            return False
-                        exist_objs.append([xmin, ymin, xmax, ymax])
-                        return True
-
-                    def intersect(idx):
-                        xmin, ymin, xmax, ymax = self.filterBbox(
-                            det_xmin[idx], det_ymin[idx], det_xmax[idx], det_ymax[idx], w, h)
-
-                        point = Point(self.getCenterPoint([xmin, ymin, xmax, ymax]))
-                        return poly.contains(point)
-
-                    # Get detections with confidence higher than threshold.
-                    top_indices = [i for i, conf in enumerate(
-                        det_conf) if conf >= self.threshold and filtering(i) and intersect(i)]
-
-                    # print('======')
-                    # print(top_indices)
-
-                    top_conf = det_conf[top_indices]
-                    top_label_indices = det_label[top_indices].tolist()
-                    top_labels = self.get_labelname(
-                        self.labelmap, top_label_indices)
-                    top_xmin = det_xmin[top_indices]
-                    top_ymin = det_ymin[top_indices]
-                    top_xmax = det_xmax[top_indices]
-                    top_ymax = det_ymax[top_indices]
-
-                    count_labels = [top_label_indices.count(
-                        idx) for idx in self.avaliable_label_indexes]
+                # Get detections with confidence higher than threshold.
+                exist_objs = []
+                def filterBboxes(idx, conf):
+                    if conf < self.threshold:
+                        return False
+                    if not self.filteringDuplicatiedBBox(exist_objs, i, w, h, det_xmin, det_ymin, det_xmax, det_ymax):
+                        return False
+                    if not self.intersect(i, w, h, det_xmin, det_ymin, det_xmax, det_ymax):
+                        return False
+                    return True
                     
-                    log_line = str(float(a) / float(fps)) if a != 0 else str(float(a))
-                    for c in count_labels:
-                        log_line += ',{}'.format(c)
-                    log_line += '\n'
-                    # print(log_line)
-                    log_writer[k].write(log_line)
+                top_indices = [i for i, conf in enumerate(det_conf) if filterBboxes(i, conf)]
 
-                    # Draw object's background.
-                    for i in range(top_conf.shape[0]):
-                        xmin, ymin, xmax, ymax = self.filterBbox(
-                            top_xmin[i], top_ymin[i], top_xmax[i], top_ymax[i], w, h)
+                top_conf = det_conf[top_indices]
+                top_label_indices = det_label[top_indices].tolist()
+                top_labels = self.get_labelname(self.labelmap, top_label_indices)
+                top_xmin = det_xmin[top_indices]
+                top_ymin = det_ymin[top_indices]
+                top_xmax = det_xmax[top_indices]
+                top_ymax = det_ymax[top_indices]
 
-                        score = top_conf[i]
-                        label = int(top_label_indices[i])
-                        label_name = top_labels[i]
-                        display_txt = '%s: %.2f' % (label_name, score)
-                        color = self.colors[label][:-1]
-                        color = [int(c * 255) for c in color]
+                # Counting specific labels. (Select by user)
+                count_labels = [top_label_indices.count(idx) for idx in self.avaliable_label_indexes]
 
-                        self.drawBboxWithoutText(
-                            img, xmin, ymin, xmax, ymax, display_txt, color)
+                # Write Log.
+                self.write_log(log_writer[zone_name], cur_num_frame, self.video_fps, count_labels)
 
-                alpha = 0.5
+                # Draw object's background.
+                for i in range(top_conf.shape[0]):
+                    xmin, ymin, xmax, ymax = self.filterBbox(
+                        top_xmin[i], top_ymin[i], top_xmax[i], top_ymax[i], w, h)
 
-                img = cv2.addWeighted(overlay, alpha, img, 1-alpha, 0)
-                
-                # Draw zone.
-                for k in self.zone_info:
-                    poly = Polygon(self.zone_info[k])
+                    score = top_conf[i]
+                    label = int(top_label_indices[i])
+                    label_name = top_labels[i]
+                    display_txt = '%s: %.2f' % (label_name, score)
+                    color = self.colors[label][:-1]
+                    color = [int(c * 255) for c in color]
 
-                    cv2.polylines(img, [self.zone_info[k]], True, (255, 0, 0), 2)
-                    poly_bound = poly.bounds
+                    self.drawBboxWithoutText(
+                        img, xmin, ymin, xmax, ymax, display_txt, color)
 
-                    # cv2.rectangle(img, (int(poly_bound[0]), int(poly_bound[1])), (int(poly_bound[2]), int(poly_bound[3])), (0,255,0), 2)
+            alpha = 0.5
 
-                    self.drawTextAtBottomRight(img, int(poly_bound[0]), int(poly_bound[1]), k, (255, 0, 0), font_scale=1, thickness=3)
-                 
-                # Draw objects.
-                for k in self.zone_info:
-                    poly = Polygon(self.zone_info[k])
+            img = cv2.addWeighted(overlay, alpha, img, 1-alpha, 0)
 
-                    exist_objs = []
+            # Draw zone.
+            for zone_name in self.zone_info:
+                poly = Polygon(self.zone_info[zone_name])
 
-                    def filtering(idx):
-                        xmin, ymin, xmax, ymax = self.filterBbox(
-                            det_xmin[idx], det_ymin[idx], det_xmax[idx], det_ymax[idx], w, h)
+                cv2.polylines(img, [self.zone_info[zone_name]], True, (255, 0, 0), 2)
+                poly_bound = poly.bounds
 
-                        if isWrong(w, h, xmin, ymin, xmax, ymax):
-                            return False
-                        temp_bbox = [xmin, ymin, xmax, ymax]
-                        if temp_bbox in exist_objs:
-                            return False
-                        exist_objs.append([xmin, ymin, xmax, ymax])
-                        return True
+                # cv2.rectangle(img, (int(poly_bound[0]), int(poly_bound[1])), (int(poly_bound[2]), int(poly_bound[3])), (0,255,0), 2)
 
-                    def intersect(idx):
-                        xmin, ymin, xmax, ymax = self.filterBbox(
-                            det_xmin[idx], det_ymin[idx], det_xmax[idx], det_ymax[idx], w, h)
+                self.drawTextAtBottomRight(img, int(poly_bound[0]), int(
+                    poly_bound[1]), zone_name, (255, 0, 0), font_scale=1, thickness=3)
 
-                        point = Point(self.getCenterPoint([xmin, ymin, xmax, ymax]))
-                        return poly.contains(point)
+            # Draw objects.
+            for zone_name in self.zone_info:
+                poly = Polygon(self.zone_info[zone_name])
 
-                    # Get detections with confidence higher than threshold.
-                    top_indices = [i for i, conf in enumerate(
-                        det_conf) if conf >= self.threshold and filtering(i) and intersect(i)]
+                # Get detections with confidence higher than threshold.
+                exist_objs = []
+                def filterBboxes(idx, conf):
+                    if conf < self.threshold:
+                        return False
+                    if not self.filteringDuplicatiedBBox(exist_objs, i, w, h, det_xmin, det_ymin, det_xmax, det_ymax):
+                        return False
+                    if not self.intersect(i, w, h, det_xmin, det_ymin, det_xmax, det_ymax):
+                        return False
+                    return True
 
-                    # print('======')
-                    # print(top_indices)
+                top_indices = [i for i, conf in enumerate(det_conf) if filterBboxes(i, conf)]
 
-                    top_conf = det_conf[top_indices]
-                    top_label_indices = det_label[top_indices].tolist()
-                    top_labels = self.get_labelname(
-                        self.labelmap, top_label_indices)
-                    top_xmin = det_xmin[top_indices]
-                    top_ymin = det_ymin[top_indices]
-                    top_xmax = det_xmax[top_indices]
-                    top_ymax = det_ymax[top_indices]
+                top_conf = det_conf[top_indices]
+                top_label_indices = det_label[top_indices].tolist()
+                top_labels = self.get_labelname(self.labelmap, top_label_indices)
+                top_xmin = det_xmin[top_indices]
+                top_ymin = det_ymin[top_indices]
+                top_xmax = det_xmax[top_indices]
+                top_ymax = det_ymax[top_indices]
 
-                    count_labels = [top_label_indices.count(
-                        idx) for idx in self.avaliable_label_indexes]
-                    
-                    for i in range(top_conf.shape[0]):
-                        xmin, ymin, xmax, ymax = self.filterBbox(
-                            top_xmin[i], top_ymin[i], top_xmax[i], top_ymax[i], w, h)
+                # Counting specific labels. (Select by user)
+                count_labels = [top_label_indices.count(idx) for idx in self.avaliable_label_indexes]
 
-                        score = top_conf[i]
-                        label = int(top_label_indices[i])
-                        label_name = top_labels[i]
-                        display_txt = '%s: %.2f' % (label_name, score)
-                        color = self.colors[label][:-1]
-                        color = [int(c * 255) for c in color]
-                        self.drawBboxWithText(img, xmin, ymin, xmax, ymax, display_txt, color)
+                # Draw Object.
+                for i in range(top_conf.shape[0]):
+                    xmin, ymin, xmax, ymax = self.filterBbox(
+                        top_xmin[i], top_ymin[i], top_xmax[i], top_ymax[i], w, h)
 
-                # cv2.imshow("Test", img)
-                # key = cv2.waitKey(0) 
-                # if key == ord('a'):
-                #     exit(1)
-                writer.write(img)
+                    score = top_conf[i]
+                    label = int(top_label_indices[i])
+                    label_name = top_labels[i]
+                    display_txt = '%s: %.2f' % (label_name, score)
+                    color = self.colors[label][:-1]
+                    color = [int(c * 255) for c in color]
+                    self.drawBboxWithText(
+                        img, xmin, ymin, xmax, ymax, display_txt, color)
+
+            # cv2.imshow("Test", img)
+            # key = cv2.waitKey(0)
+            # if key == ord('cur_num_frame'):
+            #     exit(1)
+            writer.write(img)
         writer.release()
-        for k in log_writer:
-            log_writer[k].close()
+        for zone_name in log_writer:
+            log_writer[zone_name].close()
+
+    @staticmethod
+    def isWrong(ww, hh, xxmin, yymin, xxmax, yymax):
+        if xxmin > ww or yymin > hh or xxmax < 0 or yymax < 0:
+            return True
+        CONF_W = 0.6
+        CONF_H = 0.6
+
+        limit_w = int(ww * CONF_W)
+        limit_h = int(hh * CONF_H)
+
+        o_w = xxmax - xxmin
+        o_h = yymax - yymin
+
+        if o_w > limit_w or o_h > limit_h:
+            return True
+
+        if o_w <= 20:
+            return True
+        if o_h <= 20:
+            return True
+
+        return False
 
     @staticmethod
     def get_labelname(labelmap, labels):
@@ -368,6 +344,37 @@ class ObjectDetector:
                     break
             assert found == True
         return labelnames
+
+    @staticmethod
+    def write_log(logger, cur_num_frame, fps, count_labels):
+        log_line = "%02d" % (str(float(cur_num_frame) / float(fps))
+                             if cur_num_frame != 0 else str(float(cur_num_frame)))
+        for c in count_labels:
+            log_line += ',{}'.format(c)
+        log_line += '\n'
+        # print(log_line)
+        logger.write(log_line)
+
+    @staticmethod
+    def intersect(idx, w, h, det_xmin, det_ymin, det_xmax, det_ymax):
+        xmin, ymin, xmax, ymax = self.filterBbox(
+            det_xmin[idx], det_ymin[idx], det_xmax[idx], det_ymax[idx], w, h)
+
+        point = Point(self.getCenterPoint([xmin, ymin, xmax, ymax]))
+        return poly.contains(point)
+
+    @staticmethod
+    def filteringDuplicatiedBBox(exist_objs, idx, w, h, det_xmin, det_ymin, det_xmax, det_ymax):
+        xmin, ymin, xmax, ymax = self.filterBbox(
+            det_xmin[idx], det_ymin[idx], det_xmax[idx], det_ymax[idx], w, h)
+
+        if isWrong(w, h, xmin, ymin, xmax, ymax):
+            return False
+        temp_bbox = [xmin, ymin, xmax, ymax]
+        if temp_bbox in exist_objs:
+            return False
+        exist_objs.append([xmin, ymin, xmax, ymax])
+        return True
 
     @staticmethod
     def filterBbox(xmin, ymin, xmax, ymax, w, h):
@@ -397,7 +404,7 @@ class ObjectDetector:
         size = cv2.getTextSize(display_txt, font, font_scale, thickness)
         t_w = size[0][0]
         t_h = size[0][1]
-        t_color = (0,0,0)
+        t_color = (0, 0, 0)
 
         cv2.rectangle(img, (xmin, ymin - t_h - 20),
                       (xmin + t_w + 20, ymin), t_color, 1)
@@ -415,6 +422,3 @@ class ObjectDetector:
 
         cv2.putText(img, txt, (x + x_margin, y + t_h + y_margin),
                     font, font_scale, color, thickness)
-
-
-
