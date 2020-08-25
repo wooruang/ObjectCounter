@@ -377,7 +377,7 @@ class ObjectDetector:
         xmin, ymin, xmax, ymax = ObjectDetector.filterBbox(
             det_xmin[idx], det_ymin[idx], det_xmax[idx], det_ymax[idx], w, h)
 
-        if isWrong(w, h, xmin, ymin, xmax, ymax):
+        if ObjectDetector.isWrong(w, h, xmin, ymin, xmax, ymax):
             return False
         temp_bbox = [xmin, ymin, xmax, ymax]
         if temp_bbox in exist_objs:
