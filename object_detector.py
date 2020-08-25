@@ -213,7 +213,7 @@ class ObjectDetector:
                         return False
                     if not self.filteringDuplicatiedBBox(exist_objs, i, w, h, det_xmin, det_ymin, det_xmax, det_ymax):
                         return False
-                    if not self.intersect(i, w, h, det_xmin, det_ymin, det_xmax, det_ymax):
+                    if not self.intersect(poly, i, w, h, det_xmin, det_ymin, det_xmax, det_ymax):
                         return False
                     return True
                     
@@ -275,7 +275,7 @@ class ObjectDetector:
                         return False
                     if not self.filteringDuplicatiedBBox(exist_objs, i, w, h, det_xmin, det_ymin, det_xmax, det_ymax):
                         return False
-                    if not self.intersect(i, w, h, det_xmin, det_ymin, det_xmax, det_ymax):
+                    if not self.intersect(poly, i, w, h, det_xmin, det_ymin, det_xmax, det_ymax):
                         return False
                     return True
 
@@ -365,7 +365,7 @@ class ObjectDetector:
         logger.write(log_line)
 
     @staticmethod
-    def intersect(idx, w, h, det_xmin, det_ymin, det_xmax, det_ymax):
+    def intersect(poly, idx, w, h, det_xmin, det_ymin, det_xmax, det_ymax):
         xmin, ymin, xmax, ymax = ObjectDetector.filterBbox(
             det_xmin[idx], det_ymin[idx], det_xmax[idx], det_ymax[idx], w, h)
 
