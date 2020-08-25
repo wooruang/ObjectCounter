@@ -175,10 +175,10 @@ class ObjectDetector:
 
         # Init Videos.
         cap, w, h, total_frames = self.initInVideo()
-        writer = self.initOutVideo()
+        writer = self.initOutVideo(w, h)
 
         # Init Logger.
-        log_writer = self.initFileLogger(w, h)
+        log_writer = self.initFileLogger()
 
         for cur_num_frame in tqdm(range(int(total_frames)), desc='inferencing'):
             ret, img = cap.read()
