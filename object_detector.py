@@ -67,17 +67,19 @@ class ObjectDetector:
         self.interval = interval
         self.image_resize = 512
         self.video_fps = fps
-        print("Config root        : {}".format(self.config_root))
-        print("Input File         : {}".format(self.input_path))
-        print("Labelmap File      : {}".format(self.labelmap_file))
-        print("Model config File  : {}".format(self.model_config))
-        print("Model weights File : {}".format(self.model_weights))
-        print("Detect Zone info   : {}".format(self.zone_info))
-        print("Detect Zone path   : {}".format(self.zone_path))
-        print("Detect threshold   : {}".format(self.threshold))
-        print("Detect Interval    : {}".format(self.interval))
-        print("Image resize       : {}".format(self.image_resize))
-        print("Video FPS          : {}".format(self.video_fps))
+        self.interval_frame = int(fps * self.interval)
+        print("Config root          : {}".format(self.config_root))
+        print("Input File           : {}".format(self.input_path))
+        print("Labelmap File        : {}".format(self.labelmap_file))
+        print("Model config File    : {}".format(self.model_config))
+        print("Model weights File   : {}".format(self.model_weights))
+        print("Detect Zone info     : {}".format(self.zone_info))
+        print("Detect Zone path     : {}".format(self.zone_path))
+        print("Detect threshold     : {}".format(self.threshold))
+        print("Detect Interval      : {}".format(self.interval))
+        print("Image resize         : {}".format(self.image_resize))
+        print("Video FPS            : {}".format(self.video_fps))
+        print("Video Interval Frame : {}".format(self.interval_frame))
 
     def initPlt(self):
         plt.rcParams['figure.figsize'] = (10, 10)
@@ -150,7 +152,7 @@ class ObjectDetector:
         # fps = cap.get(cv2.CAP_PROP_FPS)
         fps = self.video_fps
         # interval = fps / 10
-        interval_frame = fps * self.interval
+        # interval_frame = fps * self.interval
 
         # print(w, h, total_frames, fps, self.interval, interval_frame)
 
@@ -198,7 +200,7 @@ class ObjectDetector:
                 error_c += 1
                 continue
 
-            if a % interval_frame == 0:
+            if a % self.interval_frame == 0:
                 # print("ddddd {}".format(a))
                 overlay = img.copy()
 
