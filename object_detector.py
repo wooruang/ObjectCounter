@@ -355,8 +355,8 @@ class ObjectDetector:
 
     @staticmethod
     def write_log(logger, cur_num_frame, fps, count_labels):
-        log_line = "%02d" % (str(float(cur_num_frame) / float(fps))
-                             if cur_num_frame != 0 else str(float(cur_num_frame)))
+        log_line = "%.2f" % (float(cur_num_frame) / float(fps)
+                             if cur_num_frame != 0 else float(cur_num_frame))
         for c in count_labels:
             log_line += ',{}'.format(c)
         log_line += '\n'
