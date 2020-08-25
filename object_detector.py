@@ -116,11 +116,19 @@ class ObjectDetector:
     def initSelectedLabelIndexes(self):
         self.avaliable_label_indexes = [4, 3, 11, 9, 10, 7, 1]
 
+    def initSelectedLabelGroups(self):
+        self.avaliable_label_groups = ['1종', '2종', '3종', '3종', '4종', '5종', '5종']
+
     def initColor(self):
         self.colors = plt.cm.hsv(np.linspace(0, 1, 21)).tolist()
 
     def getFirstLine(self):
-        line = '시간'
+        line = '차종'
+        for i in self.avaliable_label_groups:
+            line += ',{}'.format(i)
+        line += '\n'
+
+        line += '시간'
         for i in self.avaliable_label_indexes:
             line += ',{}'.format(self.labelmap.item[i].display_name)
         line += '\n'
@@ -141,20 +149,20 @@ class ObjectDetector:
         det_ymax = detections[0, 0, :, 6]
         return det_label, det_conf, det_xmin, det_ymin, det_xmax, det_ymax
 
-    def initInVideo():
+    def initInVideo(self):
         cap = cv2.VideoCapture(self.input_path)
         w = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
         h = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
         total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
         return cap, w, h, total_frames
 
-    def initOutVideo(w, h):
+    def initOutVideo(self, w, h):
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         writer = cv2.VideoWriter(
             self.output_video_path, fourcc, 1 / self.interval, (int(w), int(h)))
         return writer
 
-    def initFileLogger():
+    def initFileLogger(self):
         log_writer = {}
         for zone_name in self.zone_path:
             log_writer[zone_name] = open(self.zone_path[zone_name], 'w')
@@ -166,11 +174,11 @@ class ObjectDetector:
         error_c = 0
 
         # Init Videos.
-        cap, w, h, total_frames = initInVideo()
-        writer = initOutVideo()
+        cap, w, h, total_frames = self.initInVideo()
+        writer = self.initOutVideo()
 
         # Init Logger.
-        log_writer = initFileLogger(w, h)
+        log_writer = self.initFileLogger(w, h)
 
         for cur_num_frame in tqdm(range(int(total_frames)), desc='inferencing'):
             ret, img = cap.read()
