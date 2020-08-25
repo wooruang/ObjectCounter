@@ -366,15 +366,15 @@ class ObjectDetector:
 
     @staticmethod
     def intersect(idx, w, h, det_xmin, det_ymin, det_xmax, det_ymax):
-        xmin, ymin, xmax, ymax = self.filterBbox(
+        xmin, ymin, xmax, ymax = ObjectDetector.filterBbox(
             det_xmin[idx], det_ymin[idx], det_xmax[idx], det_ymax[idx], w, h)
 
-        point = Point(self.getCenterPoint([xmin, ymin, xmax, ymax]))
+        point = Point(ObjectDetector.getCenterPoint([xmin, ymin, xmax, ymax]))
         return poly.contains(point)
 
     @staticmethod
     def filteringDuplicatiedBBox(exist_objs, idx, w, h, det_xmin, det_ymin, det_xmax, det_ymax):
-        xmin, ymin, xmax, ymax = self.filterBbox(
+        xmin, ymin, xmax, ymax = ObjectDetector.filterBbox(
             det_xmin[idx], det_ymin[idx], det_xmax[idx], det_ymax[idx], w, h)
 
         if isWrong(w, h, xmin, ymin, xmax, ymax):
